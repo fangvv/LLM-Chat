@@ -706,6 +706,28 @@
             padding: 0;
         }
 
+        .message-content .katex-display {
+            margin: 12px 0;
+            overflow-x: auto;
+            padding: 8px 0;
+        }
+
+        .message-content .katex {
+            font-size: 1.1em;
+        }
+
+        .message-content .math-block {
+            background: var(--pre-bg);
+            padding: 12px;
+            border-radius: var(--radius-sm);
+            margin: 10px 0;
+        }
+
+        .message-content .math-block code {
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
         .message-content table {
             border-collapse: collapse;
             margin: 10px 0;
@@ -1474,21 +1496,38 @@
         function formatContent(text) {
             if (!text) return '';
 
-            // 处理 LaTeX 公式：先将公式替换为占位符，渲染后再还原
             const mathBlocks = [];
             const mathInline = [];
 
-            // 提取块级公式 $$...$$
-            text = text.replace(/\$\$([\s\S]*?)\$\$/g, (match, formula) => {
+            // 提取 \[...\] 块级公式
+            text = text.replace(/\\\[([\s\S]*?)\\\]/g, (match, formula) => {
                 const id = mathBlocks.length;
-                mathBlocks.push(formula);
+                mathBlocks.push(formula.trim());
                 return `%%MATH_BLOCK_${id}%%`;
             });
 
-            // 提取行内公式 $...$
-            text = text.replace(/\$([^\$\n]+?)\$/g, (match, formula) => {
+            // 提取 $$...$$ 块级公式（支持多行）
+            text = text.replace(/\$\$([\s\S]*?)\$\$/g, (match, formula) => {
+                const id = mathBlocks.length;
+                mathBlocks.push(formula.trim());
+                return `%%MATH_BLOCK_${id}%%`;
+            });
+
+            // 提取 \(...\) 行内公式
+            text = text.replace(/\\\(([\s\S]*?)\\\)/g, (match, formula) => {
                 const id = mathInline.length;
-                mathInline.push(formula);
+                mathInline.push(formula.trim());
+                return `%%MATH_INLINE_${id}%%`;
+            });
+
+            // 提取 $...$ 行内公式（不匹配空内容和货币符号）
+            text = text.replace(/\$([^\$\n]+?)\$/g, (match, formula) => {
+                // 排除可能是货币的情况（纯数字或数字后跟空格）
+                if (/^\d+(\.\d+)?$/.test(formula.trim()) || /^\d+\s/.test(formula.trim())) {
+                    return match;
+                }
+                const id = mathInline.length;
+                mathInline.push(formula.trim());
                 return `%%MATH_INLINE_${id}%%`;
             });
 
@@ -1503,19 +1542,19 @@
             // 还原并渲染 LaTeX 公式
             mathBlocks.forEach((formula, id) => {
                 try {
-                    const rendered = katex.renderToString(formula, { displayMode: true, throwOnError: false });
+                    const rendered = katex.renderToString(formula, { displayMode: true, throwOnError: false, strict: false });
                     html = html.replace(`%%MATH_BLOCK_${id}%%`, rendered);
                 } catch (e) {
-                    html = html.replace(`%%MATH_BLOCK_${id}%%`, `<code>$$${escapeHtml(formula)}$$</code>`);
+                    html = html.replace(`%%MATH_BLOCK_${id}%%`, `<pre class="math-block"><code>${escapeHtml(formula)}</code></pre>`);
                 }
             });
 
             mathInline.forEach((formula, id) => {
                 try {
-                    const rendered = katex.renderToString(formula, { displayMode: false, throwOnError: false });
+                    const rendered = katex.renderToString(formula, { displayMode: false, throwOnError: false, strict: false });
                     html = html.replace(`%%MATH_INLINE_${id}%%`, rendered);
                 } catch (e) {
-                    html = html.replace(`%%MATH_INLINE_${id}%%`, `<code>$${escapeHtml(formula)}$</code>`);
+                    html = html.replace(`%%MATH_INLINE_${id}%%`, `<code>${escapeHtml(formula)}</code>`);
                 }
             });
 
