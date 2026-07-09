@@ -9,6 +9,8 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
         rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked@15.0.7/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
@@ -1471,10 +1473,53 @@
 
         function formatContent(text) {
             if (!text) return '';
+
+            // 处理 LaTeX 公式：先将公式替换为占位符，渲染后再还原
+            const mathBlocks = [];
+            const mathInline = [];
+
+            // 提取块级公式 $$...$$
+            text = text.replace(/\$\$([\s\S]*?)\$\$/g, (match, formula) => {
+                const id = mathBlocks.length;
+                mathBlocks.push(formula);
+                return `%%MATH_BLOCK_${id}%%`;
+            });
+
+            // 提取行内公式 $...$
+            text = text.replace(/\$([^\$\n]+?)\$/g, (match, formula) => {
+                const id = mathInline.length;
+                mathInline.push(formula);
+                return `%%MATH_INLINE_${id}%%`;
+            });
+
+            // 渲染 Markdown
+            let html = '';
             if (typeof marked !== 'undefined') {
-                return marked.parse(text, { breaks: true, gfm: true });
+                html = marked.parse(text, { breaks: true, gfm: true });
+            } else {
+                html = '<p>' + escapeHtml(text).replace(/\n/g, '<br>') + '</p>';
             }
-            return '<p>' + escapeHtml(text).replace(/\n/g, '<br>') + '</p>';
+
+            // 还原并渲染 LaTeX 公式
+            mathBlocks.forEach((formula, id) => {
+                try {
+                    const rendered = katex.renderToString(formula, { displayMode: true, throwOnError: false });
+                    html = html.replace(`%%MATH_BLOCK_${id}%%`, rendered);
+                } catch (e) {
+                    html = html.replace(`%%MATH_BLOCK_${id}%%`, `<code>$$${escapeHtml(formula)}$$</code>`);
+                }
+            });
+
+            mathInline.forEach((formula, id) => {
+                try {
+                    const rendered = katex.renderToString(formula, { displayMode: false, throwOnError: false });
+                    html = html.replace(`%%MATH_INLINE_${id}%%`, rendered);
+                } catch (e) {
+                    html = html.replace(`%%MATH_INLINE_${id}%%`, `<code>$${escapeHtml(formula)}$</code>`);
+                }
+            });
+
+            return html;
         }
 
         // ====== File Upload (PDF) ======
