@@ -1,0 +1,1696 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM Chat</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked@15.0.7/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
+    <style>
+        :root {
+            --bg-primary: #0f1117;
+            --bg-secondary: #161822;
+            --bg-card: #1c1f2e;
+            --bg-card-hover: #242738;
+            --bg-input: #1a1d2b;
+            --border-color: #2a2d3e;
+            --border-active: #4a6cf7;
+            --text-primary: #e8eaed;
+            --text-secondary: #9aa0b0;
+            --text-muted: #5a6070;
+            --accent: #4a6cf7;
+            --accent-hover: #5b7bff;
+            --accent-glow: rgba(74, 108, 247, 0.25);
+            --user-bubble: #2d3361;
+            --ai-bubble: #1c1f2e;
+            --success: #34d399;
+            --error: #ef4444;
+            --error-bg: rgba(239, 68, 68, 0.1);
+            --scrollbar-thumb: #2a2d3e;
+            --scrollbar-track: transparent;
+            --radius: 12px;
+            --radius-sm: 8px;
+            --shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+            --chat-header-bg: var(--bg-secondary);
+            --input-area-bg: var(--bg-secondary);
+            --input-bg: var(--bg-input);
+            --code-bg: rgba(0, 0, 0, 0.3);
+            --pre-bg: rgba(0, 0, 0, 0.4);
+            --conv-active: rgba(74, 108, 247, 0.12);
+            --file-tag-bg: rgba(74, 108, 247, 0.15);
+            --font-scale: 13px;
+        }
+
+        [data-theme="light"] {
+            --bg-primary: #f5f6fa;
+            --bg-secondary: #ffffff;
+            --bg-card: #eef0f6;
+            --bg-card-hover: #e4e7ef;
+            --bg-input: #f0f1f6;
+            --border-color: #d1d5e0;
+            --text-primary: #1a1d2e;
+            --text-secondary: #5a6070;
+            --text-muted: #9098a8;
+            --accent: #4a6cf7;
+            --accent-hover: #3b5de7;
+            --accent-glow: rgba(74, 108, 247, 0.15);
+            --user-bubble: #e4e9ff;
+            --ai-bubble: #ffffff;
+            --success: #10b981;
+            --error: #ef4444;
+            --error-bg: rgba(239, 68, 68, 0.08);
+            --scrollbar-thumb: #c4c8d6;
+            --shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+            --chat-header-bg: var(--bg-secondary);
+            --input-area-bg: var(--bg-secondary);
+            --input-bg: var(--bg-input);
+            --code-bg: rgba(0, 0, 0, 0.06);
+            --pre-bg: rgba(0, 0, 0, 0.04);
+            --conv-active: rgba(74, 108, 247, 0.08);
+            --file-tag-bg: rgba(74, 108, 247, 0.1);
+            --font-scale: 13px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--scrollbar-track);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--scrollbar-thumb);
+            border-radius: 3px;
+        }
+
+        .app-container {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* Left Panel */
+        .left-panel {
+            width: 340px;
+            min-width: 340px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-color);
+            flex-shrink: 0;
+        }
+
+        .panel-header h1 {
+            font-size: 17px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .panel-header h1 .logo {
+            width: 26px;
+            height: 26px;
+            background: var(--accent);
+            border-radius: 7px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            color: #fff;
+            font-weight: 700;
+        }
+
+        .panel-header .subtitle {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+            margin-left: 36px;
+        }
+
+        /* Settings */
+        .settings-section {
+            padding: 12px 20px 14px;
+            border-bottom: 1px solid var(--border-color);
+            flex-shrink: 0;
+        }
+
+        .section-label {
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            margin-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 10px;
+        }
+
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 8px 10px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-size: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            outline: none;
+            transition: border-color .2s, box-shadow .2s;
+        }
+
+        .form-group input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+            width: 100%;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+            box-shadow: 0 0 20px var(--accent-glow);
+        }
+
+        .btn-primary:disabled {
+            opacity: .4;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .status-bar {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 8px;
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--text-muted);
+            flex-shrink: 0;
+        }
+
+        .status-dot.connected {
+            background: var(--success);
+            box-shadow: 0 0 8px rgba(52, 211, 153, .5);
+        }
+
+        .status-dot.error {
+            background: var(--error);
+            box-shadow: 0 0 8px rgba(239, 68, 68, .5);
+        }
+
+        .status-dot.connecting {
+            background: var(--accent);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1
+            }
+
+            50% {
+                opacity: .4
+            }
+        }
+
+        .error-msg {
+            background: var(--error-bg);
+            color: var(--error);
+            padding: 6px 10px;
+            border-radius: var(--radius-sm);
+            font-size: 11px;
+            margin-top: 6px;
+            display: none;
+        }
+
+        .error-msg.show {
+            display: block;
+        }
+
+        /* Conversations */
+        .conv-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .conv-header {
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+
+        .conv-actions {
+            display: flex;
+            gap: 4px;
+        }
+
+        .conv-actions button {
+            background: none;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-muted);
+            cursor: pointer;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            transition: all .15s;
+        }
+
+        .conv-actions button:hover {
+            background: var(--bg-card-hover);
+            color: var(--text-primary);
+        }
+
+        .conv-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 10px 10px;
+        }
+
+        .conv-item {
+            padding: 10px 12px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all .12s;
+            margin-bottom: 2px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .conv-item:hover {
+            background: var(--bg-card-hover);
+        }
+
+        .conv-item.active {
+            background: var(--conv-active);
+            border: 1px solid var(--accent);
+            padding: 9px 11px;
+        }
+
+        .conv-item .conv-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 7px;
+            background: var(--bg-card);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            flex-shrink: 0;
+            border: 1px solid var(--border-color);
+        }
+
+        .conv-item.active .conv-icon {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+        }
+
+        .conv-item .conv-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .conv-item .conv-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .conv-item .conv-meta {
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .conv-item .conv-del {
+            opacity: 0;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 13px;
+            padding: 2px 4px;
+            border-radius: 4px;
+            transition: all .12s;
+            flex-shrink: 0;
+        }
+
+        .conv-item:hover .conv-del {
+            opacity: 1;
+        }
+
+        .conv-item .conv-del:hover {
+            color: var(--error);
+            background: var(--error-bg);
+        }
+
+        /* Model List in conv */
+        .model-select-row {
+            padding: 6px 20px 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid var(--border-color);
+            flex-shrink: 0;
+        }
+
+        .model-select-row label {
+            font-size: 10px;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            white-space: nowrap;
+        }
+
+        .model-select-row select {
+            flex: 1;
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-size: 12px;
+            padding: 6px 8px;
+            font-family: 'JetBrains Mono', monospace;
+            outline: none;
+            cursor: pointer;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .model-select-row select option {
+            font-size: 11px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .model-select-row select:focus {
+            border-color: var(--accent);
+        }
+
+        /* Font size buttons */
+        .font-size-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 0 0;
+        }
+
+        .font-size-row label {
+            font-size: 10px;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            white-space: nowrap;
+        }
+
+        .font-size-btn {
+            padding: 3px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            background: var(--bg-input);
+            color: var(--text-secondary);
+            font-size: 10px;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            transition: all .15s;
+        }
+
+        .font-size-btn:hover {
+            border-color: var(--accent);
+            color: var(--text-primary);
+        }
+
+        .font-size-btn.active {
+            border-color: var(--accent);
+            background: var(--accent-glow);
+            color: var(--accent);
+        }
+
+        /* Right Panel */
+        .chat-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            background: var(--bg-primary);
+        }
+
+        .chat-header {
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--chat-header-bg);
+            flex-shrink: 0;
+        }
+
+        .chat-header-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chat-header-model {
+            font-size: var(--font-scale);
+            font-weight: 600;
+        }
+
+        .chat-header-model .model-tag {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent);
+        }
+
+        .chat-header-actions {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .theme-toggle {
+            background: none;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+            cursor: pointer;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all .15s;
+            font-size: 15px;
+            flex-shrink: 0;
+        }
+
+        .theme-toggle:hover {
+            background: var(--bg-card-hover);
+            color: var(--text-primary);
+        }
+
+        .icon-btn {
+            background: none;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 5px 10px;
+            font-size: 11px;
+            transition: all .15s;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
+
+        .icon-btn:hover {
+            background: var(--bg-card-hover);
+            color: var(--text-primary);
+        }
+
+        .icon-btn.danger:hover {
+            color: var(--error);
+            border-color: var(--error);
+            background: var(--error-bg);
+        }
+
+        /* Messages */
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .message {
+            display: flex;
+            gap: 10px;
+            max-width: 88%;
+            animation: fadeIn .25s ease;
+        }
+
+        .message.user {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+
+        .message.assistant {
+            align-self: flex-start;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(6px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
+        .message-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 7px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            flex-shrink: 0;
+        }
+
+        .message.user .message-avatar {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .message.assistant .message-avatar {
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+        }
+
+        .message-content {
+            padding: 10px 14px;
+            border-radius: var(--radius);
+            font-size: var(--font-scale);
+            line-height: 1.65;
+            word-break: break-word;
+        }
+
+        .message.user .message-content {
+            background: var(--user-bubble);
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.assistant .message-content {
+            background: var(--ai-bubble);
+            border: 1px solid var(--border-color);
+            border-bottom-left-radius: 4px;
+        }
+
+        .message-content p {
+            margin-bottom: 6px;
+        }
+
+        .message-content p:last-child {
+            margin-bottom: 0;
+        }
+
+        .message-content code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: calc(var(--font-scale) - 2px);
+            background: var(--code-bg);
+            padding: 1px 5px;
+            border-radius: 3px;
+        }
+
+        .message-content pre {
+            margin: 10px 0;
+            padding: 14px;
+            background: var(--pre-bg);
+            border-radius: var(--radius-sm);
+            overflow-x: auto;
+        }
+
+        .message-content pre code {
+            background: none;
+            padding: 0;
+        }
+
+        .message-content table {
+            border-collapse: collapse;
+            margin: 10px 0;
+            font-size: calc(var(--font-scale) - 1px);
+            width: 100%;
+        }
+
+        .message-content th,
+        .message-content td {
+            border: 1px solid var(--border-color);
+            padding: 6px 10px;
+            text-align: left;
+        }
+
+        .message-content th {
+            background: var(--bg-card);
+            font-weight: 600;
+        }
+
+        .message-content blockquote {
+            border-left: 3px solid var(--accent);
+            margin: 10px 0;
+            padding: 3px 14px;
+            color: var(--text-secondary);
+            background: var(--bg-card);
+            border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+        }
+
+        .message-content ul,
+        .message-content ol {
+            padding-left: 18px;
+            margin: 6px 0;
+        }
+
+        .message-content li {
+            margin: 3px 0;
+        }
+
+        .message-content hr {
+            border: none;
+            border-top: 1px solid var(--border-color);
+            margin: 14px 0;
+        }
+
+        .streaming-cursor {
+            display: inline-block;
+            width: 2px;
+            height: 14px;
+            background: var(--accent);
+            margin-left: 2px;
+            animation: blink .8s step-end infinite;
+            vertical-align: middle;
+        }
+
+        @keyframes blink {
+            50% {
+                opacity: 0
+            }
+        }
+
+        /* File tag in messages */
+        .file-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--file-tag-bg);
+            border: 1px solid var(--accent);
+            border-radius: 6px;
+            padding: 4px 10px;
+            font-size: 11px;
+            margin-bottom: 8px;
+            color: var(--accent);
+        }
+
+        .file-tag .file-icon {
+            font-size: 13px;
+        }
+
+        /* Empty */
+        .empty-chat {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            gap: 12px;
+            padding: 40px;
+        }
+
+        .empty-chat .icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+        }
+
+        .empty-chat h2 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .empty-chat p {
+            font-size: 12px;
+            text-align: center;
+            line-height: 1.6;
+            max-width: 300px;
+        }
+
+        /* Input */
+        .input-area {
+            padding: 12px 20px 14px;
+            border-top: 1px solid var(--border-color);
+            background: var(--input-area-bg);
+            flex-shrink: 0;
+        }
+
+        .input-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 6px;
+        }
+
+        .file-btn {
+            background: none;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-muted);
+            cursor: pointer;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            transition: all .15s;
+            flex-shrink: 0;
+        }
+
+        .file-btn:hover {
+            background: var(--bg-card-hover);
+            color: var(--text-primary);
+        }
+
+        .file-btn.has-file {
+            background: var(--file-tag-bg);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .file-info {
+            display: none;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            color: var(--text-secondary);
+            padding: 3px 8px;
+            background: var(--bg-card);
+            border-radius: 5px;
+        }
+
+        .file-info.show {
+            display: flex;
+        }
+
+        .file-info .file-name {
+            max-width: 120px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .file-info .file-remove {
+            cursor: pointer;
+            color: var(--text-muted);
+            font-size: 13px;
+            line-height: 1;
+        }
+
+        .file-info .file-remove:hover {
+            color: var(--error);
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 6px;
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 3px;
+            transition: border-color .2s;
+        }
+
+        .input-wrapper:focus-within {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        .input-wrapper textarea {
+            flex: 1;
+            background: none;
+            border: none;
+            padding: 7px 10px;
+            color: var(--text-primary);
+            font-size: var(--font-scale);
+            font-family: 'Inter', sans-serif;
+            outline: none;
+            resize: none;
+            line-height: 1.5;
+            max-height: 120px;
+        }
+
+        .input-wrapper textarea::placeholder {
+            color: var(--text-muted);
+        }
+
+        .send-btn {
+            width: 34px;
+            height: 34px;
+            border: none;
+            border-radius: var(--radius-sm);
+            background: var(--accent);
+            color: #fff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all .15s;
+            flex-shrink: 0;
+            align-self: flex-end;
+        }
+
+        .send-btn:hover {
+            background: var(--accent-hover);
+        }
+
+        .send-btn:disabled {
+            opacity: .4;
+            cursor: not-allowed;
+        }
+
+        .send-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .settings-hint {
+            font-size: 10px;
+            color: var(--text-muted);
+            text-align: center;
+            margin-top: 6px;
+        }
+
+        /* Responsive */
+        @media(max-width:768px) {
+            .left-panel {
+                width: 100%;
+                min-width: 0;
+                max-height: 35vh;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+            }
+
+            .app-container {
+                flex-direction: column;
+            }
+
+            .message {
+                max-width: 95%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-container">
+
+        <!-- Left Panel -->
+        <div class="left-panel">
+            <div class="panel-header">
+                <h1><span class="logo">~</span> LLM Chat</h1>
+                <div class="subtitle">连接你的 API，自动发现模型</div>
+            </div>
+
+            <!-- Settings -->
+            <div class="settings-section" id="settingsSection">
+                <div class="section-label">API 配置</div>
+                <div class="form-group">
+                    <label for="baseUrl">接入端地址</label>
+                    <input type="url" id="baseUrl" placeholder="https://api.openai.com/v1" autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label for="apiKey">API 密钥</label>
+                    <input type="password" id="apiKey" placeholder="sk-..." autocomplete="off">
+                </div>
+                <button class="btn btn-primary" id="connectBtn" onclick="connect()">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                    </svg>
+                    保存配置 & 连接
+                </button>
+                <div class="status-bar">
+                    <span class="status-dot" id="statusDot"></span>
+                    <span id="statusText">未连接</span>
+                </div>
+                <div class="error-msg" id="errorMsg"></div>
+            </div>
+
+            <!-- Model Select (current conv) -->
+            <div class="model-select-row">
+                <label>模型</label>
+                <select id="modelSelect" onchange="onModelChange()" disabled>
+                    <option value="">— 请先连接 —</option>
+                </select>
+            </div>
+
+            <!-- Font Size -->
+            <div class="model-select-row" style="border-bottom:none;padding-top:4px;padding-bottom:4px;">
+                <label style="font-size:10px;">字号</label>
+                <div class="font-size-row" style="padding:0;">
+                    <button class="font-size-btn" data-size="11px" onclick="setFontSize('11px')">小</button>
+                    <button class="font-size-btn active" data-size="13px" onclick="setFontSize('13px')">中</button>
+                    <button class="font-size-btn" data-size="15px" onclick="setFontSize('15px')">大</button>
+                </div>
+            </div>
+
+            <!-- System Prompt -->
+            <div class="model-select-row"
+                style="flex-direction:column;align-items:stretch;gap:6px;padding:8px 20px 10px;">
+                <label
+                    style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);font-weight:600;">系统提示词</label>
+                <textarea id="systemPromptInput" rows="2"
+                    style="background:var(--bg-input);border:1px solid var(--border-color);border-radius:var(--radius-sm);color:var(--text-primary);font-size:11px;padding:6px 8px;outline:none;font-family:'Inter',sans-serif;resize:vertical;min-height:44px;transition:border-color .2s;"
+                    placeholder="每个对话可自定义系统提示词" onchange="onSystemPromptChange()"></textarea>
+            </div>
+
+            <!-- Conversations -->
+            <div class="conv-section">
+                <div class="conv-header">
+                    <span class="section-label" style="margin:0">对话列表</span>
+                    <div class="conv-actions">
+                        <button onclick="newConversation()" title="新建对话">+</button>
+                    </div>
+                </div>
+                <div class="conv-list" id="convList"></div>
+            </div>
+        </div>
+
+        <!-- Right Panel -->
+        <div class="chat-panel">
+            <div class="chat-header">
+                <div class="chat-header-info">
+                    <div class="chat-header-model">
+                        <span id="currentConvName">未选择对话</span>
+                    </div>
+                    <div class="chat-header-status" id="chatStatus"></div>
+                </div>
+                <div class="chat-header-actions">
+                    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换主题">🌙</button>
+                    <button class="icon-btn danger" id="clearChatBtn" onclick="clearConversation()"
+                        style="display:none">清空</button>
+                </div>
+            </div>
+
+            <div class="messages-container" id="messagesContainer">
+                <div class="empty-chat" id="emptyChat">
+                    <div class="icon">💬</div>
+                    <h2>开始对话</h2>
+                    <p>新建一个对话，选择模型，开始聊天吧</p>
+                </div>
+            </div>
+
+            <!-- Input -->
+            <div class="input-area">
+                <div class="input-toolbar">
+                    <button class="file-btn" id="fileBtn" onclick="document.getElementById('fileInput').click()"
+                        title="上传文件 (PDF)">📎</button>
+                    <div class="file-info" id="fileInfo">
+                        <span class="file-icon">📄</span>
+                        <span class="file-name" id="fileName"></span>
+                        <span class="file-remove" onclick="clearFile()">✕</span>
+                    </div>
+                </div>
+                <input type="file" id="fileInput" accept=".pdf,application/pdf" style="display:none">
+                <div class="input-wrapper">
+                    <textarea id="chatInput" rows="1" placeholder="输入消息..." disabled></textarea>
+                    <button class="send-btn" id="sendBtn" onclick="sendMessage()" disabled>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="22" y1="2" x2="11" y2="13" />
+                            <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="settings-hint">Enter 发送 · Shift+Enter 换行 · 支持 PDF 上传</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ====== State ======
+        let convIdCounter = 0;
+        function genId() { return 'c' + (++convIdCounter); }
+
+        const STATE = {
+            config: null,
+            models: [],
+            conversations: [],     // [{id, name, messages:[{role,content,file?}], modelId}]
+            currentConvId: null,
+            isStreaming: false,
+            abortController: null,
+            pendingFile: null,     // {name, text}
+        };
+
+        // ====== DOM ======
+        const $ = id => document.getElementById(id);
+        const baseUrl = $('baseUrl');
+        const apiKey = $('apiKey');
+        const connectBtn = $('connectBtn');
+        const statusDot = $('statusDot');
+        const statusText = $('statusText');
+        const errorMsg = $('errorMsg');
+        const modelSelect = $('modelSelect');
+        const convList = $('convList');
+        const currentConvName = $('currentConvName');
+        const chatStatus = $('chatStatus');
+        const messagesContainer = $('messagesContainer');
+        const emptyChat = $('emptyChat');
+        const chatInput = $('chatInput');
+        const sendBtn = $('sendBtn');
+        const clearChatBtn = $('clearChatBtn');
+        const fileInput = $('fileInput');
+        const fileInfo = $('fileInfo');
+        const fileName = $('fileName');
+        const fileBtn = $('fileBtn');
+        const systemPromptInput = $('systemPromptInput');
+
+        // ====== Init ======
+        function init() {
+            loadTheme();
+            loadFontSize();
+            // Load conversations
+            const saved = localStorage.getItem('llm_chat_convs');
+            if (saved) {
+                try {
+                    const data = JSON.parse(saved);
+                    STATE.conversations = data.convs || [];
+                    convIdCounter = data.counter || 0;
+                    if (data.currentId) {
+                        STATE.currentConvId = data.currentId;
+                        if (!STATE.conversations.find(c => c.id === data.currentId)) {
+                            STATE.currentConvId = null;
+                        }
+                    }
+                } catch (e) { console.error(e); }
+            }
+            if (STATE.conversations.length === 0) {
+                createConv('默认对话', true);
+            }
+            renderConvList();
+            switchConv(STATE.currentConvId || STATE.conversations[0]?.id);
+
+            // Load API config
+            const savedCfg = localStorage.getItem('llm_chat_config');
+            if (savedCfg) {
+                try {
+                    STATE.config = JSON.parse(savedCfg);
+                    baseUrl.value = STATE.config.baseUrl || '';
+                    apiKey.value = STATE.config.apiKey || '';
+                    connect();
+                } catch (e) { console.error(e); }
+            }
+        }
+
+        // ====== Theme ======
+        function toggleTheme() {
+            const html = document.documentElement;
+            const isDark = html.getAttribute('data-theme') !== 'light';
+            if (isDark) {
+                html.setAttribute('data-theme', 'light');
+                localStorage.setItem('llm_chat_theme', 'light');
+                document.getElementById('themeToggle').textContent = '☀️';
+            } else {
+                html.removeAttribute('data-theme');
+                localStorage.setItem('llm_chat_theme', 'dark');
+                document.getElementById('themeToggle').textContent = '🌙';
+            }
+        }
+        function loadTheme() {
+            if (localStorage.getItem('llm_chat_theme') === 'light') {
+                document.documentElement.setAttribute('data-theme', 'light');
+                document.getElementById('themeToggle').textContent = '☀️';
+            }
+        }
+
+        // ====== Font Size ======
+        function setFontSize(size) {
+            document.documentElement.style.setProperty('--font-scale', size);
+            localStorage.setItem('llm_chat_font_size', size);
+            document.querySelectorAll('.font-size-btn').forEach(b => {
+                b.classList.toggle('active', b.dataset.size === size);
+            });
+        }
+        function loadFontSize() {
+            const saved = localStorage.getItem('llm_chat_font_size') || '13px';
+            setFontSize(saved);
+        }
+
+        // ====== System Prompt ======
+        function onSystemPromptChange() {
+            const conv = getCurrentConv();
+            if (!conv) return;
+            conv.systemPrompt = systemPromptInput.value.trim() || '';
+            saveConvs();
+        }
+        function loadSystemPromptUI() {
+            const conv = getCurrentConv();
+            const sp = (conv && conv.systemPrompt !== undefined) ? conv.systemPrompt : 'You are a helpful assistant.';
+            systemPromptInput.value = sp || '';
+            // Also ensure old convs get the default
+            if (conv && conv.systemPrompt === undefined) {
+                conv.systemPrompt = 'You are a helpful assistant.';
+            }
+        }
+
+        // ====== Connection ======
+        async function connect() {
+            const url = baseUrl.value.trim().replace(/\/+$/, '');
+            const key = apiKey.value.trim();
+            if (!url) { showError('请输入接入端地址'); return; }
+            if (!key) { showError('请输入 API 密钥'); return; }
+            STATE.config = { baseUrl: url, apiKey: key };
+            localStorage.setItem('llm_chat_config', JSON.stringify(STATE.config));
+            setStatus('connecting', '连接中...');
+            connectBtn.disabled = true;
+            connectBtn.innerHTML = '<div class="loading-spinner" style="width:14px;height:14px;border-width:2px;margin:0;display:inline-block"></div> 连接中...';
+            hideError();
+            try {
+                const models = await fetchModels(url, key);
+                STATE.models = models;
+                populateModelSelect();
+                setStatus('connected', `已连接 · ${models.length} 个模型`);
+                onModelChange(); // 同步聊天状态
+                connectBtn.textContent = '✓ 已连接';
+                connectBtn.disabled = false;
+                setTimeout(() => { connectBtn.textContent = '保存配置 & 连接'; }, 2000);
+            } catch (err) {
+                showError(err.message);
+                setStatus('error', '连接失败');
+                connectBtn.textContent = '保存配置 & 连接';
+                connectBtn.disabled = false;
+                STATE.models = [];
+                populateModelSelect();
+            }
+        }
+        async function fetchModels(baseUrl, apiKey) {
+            const resp = await fetch(`${baseUrl}/models`, { headers: { 'Authorization': `Bearer ${apiKey}` } });
+            if (!resp.ok) {
+                let msg = `HTTP ${resp.status}`;
+                try { const d = await resp.json(); msg = d.error?.message || d.error || msg; } catch (e) { }
+                throw new Error(msg);
+            }
+            const data = await resp.json();
+            if (!data.data || !Array.isArray(data.data)) throw new Error('返回格式异常');
+            let models = data.data.filter(m => m.id && !m.id.includes('instruct')).map(m => ({ id: m.id }));
+            const seen = new Set();
+            return models.filter(m => { if (seen.has(m.id)) return false; seen.add(m.id); return true; });
+        }
+
+        // ====== Model Select ======
+        function populateModelSelect() {
+            if (!modelSelect) return;
+            modelSelect.innerHTML = '<option value="">— 请选择模型 —</option>';
+            STATE.models.forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m.id;
+                opt.textContent = m.id;
+                modelSelect.appendChild(opt);
+            });
+            // Restore current conv's model
+            const conv = getCurrentConv();
+            if (conv && conv.modelId) {
+                modelSelect.value = conv.modelId;
+            }
+            modelSelect.disabled = STATE.models.length === 0;
+        }
+        function onModelChange() {
+            const conv = getCurrentConv();
+            if (!conv) return;
+            conv.modelId = modelSelect ? (modelSelect.value || null) : null;
+            // Update header display
+            const headerInfo = document.querySelector('.chat-header-model');
+            if (headerInfo) {
+                if (conv.modelId) {
+                    headerInfo.innerHTML = `${escapeHtml(conv.name)} <span style="font-size:11px;color:var(--text-muted);font-weight:400">· <span class="model-tag">${escapeHtml(conv.modelId)}</span></span>`;
+                } else {
+                    headerInfo.innerHTML = escapeHtml(conv.name);
+                }
+            }
+            enableChat(!!conv.modelId && STATE.models.length > 0);
+            saveConvs();
+        }
+
+        // ====== Conversations ======
+        function getCurrentConv() {
+            return STATE.conversations.find(c => c.id === STATE.currentConvId);
+        }
+        function getConvMessages() {
+            const conv = getCurrentConv();
+            return conv ? conv.messages : [];
+        }
+
+        function createConv(name, setActive) {
+            const conv = { id: genId(), name: name || '新对话', messages: [], modelId: null, systemPrompt: 'You are a helpful assistant.' };
+            STATE.conversations.push(conv);
+            if (setActive) STATE.currentConvId = conv.id;
+            saveConvs();
+            return conv;
+        }
+
+        function newConversation() {
+            // Find next number
+            let n = 1;
+            while (STATE.conversations.find(c => c.name === `对话 ${n}`)) n++;
+            const conv = createConv(`对话 ${n}`, true);
+            renderConvList();
+            switchConv(conv.id);
+        }
+
+        function switchConv(id) {
+            // Save current conv messages
+            STATE.currentConvId = id;
+            const conv = getCurrentConv();
+            if (!conv) return;
+
+            // Restore model selection
+            if (conv.modelId && STATE.models.find(m => m.id === conv.modelId)) {
+                modelSelect.value = conv.modelId;
+            } else if (STATE.models.length > 0) {
+                // Auto-select first available model if conv has none
+                modelSelect.value = STATE.models[0].id;
+                conv.modelId = STATE.models[0].id;
+            } else {
+                modelSelect.value = '';
+            }
+            onModelChange(); // updates header & chat state
+
+            // Load system prompt for this conversation
+            loadSystemPromptUI();
+
+            renderConvList();
+            renderMessages();
+            updateChatTitle(conv);
+            saveConvs();
+        }
+
+        function updateChatTitle(conv) {
+            const headerInfo = document.querySelector('.chat-header-model');
+            if (conv.modelId) {
+                headerInfo.innerHTML = `${escapeHtml(conv.name)} <span style="font-size:11px;color:var(--text-muted);font-weight:400">· <span class="model-tag">${escapeHtml(conv.modelId)}</span></span>`;
+            } else {
+                headerInfo.innerHTML = escapeHtml(conv.name);
+            }
+        }
+
+        function deleteConv(id) {
+            if (STATE.conversations.length <= 1) { showError('至少保留一个对话'); return; }
+            if (!confirm('确定删除此对话？')) return;
+            STATE.conversations = STATE.conversations.filter(c => c.id !== id);
+            if (STATE.currentConvId === id) {
+                STATE.currentConvId = STATE.conversations[0]?.id || null;
+            }
+            renderConvList();
+            if (STATE.currentConvId) switchConv(STATE.currentConvId);
+            saveConvs();
+        }
+
+        function renderConvList() {
+            convList.innerHTML = STATE.conversations.map(c => {
+                const active = c.id === STATE.currentConvId ? 'active' : '';
+                const msgCount = c.messages.length;
+                const meta = msgCount > 0 ? `${msgCount} 条消息` : '空对话';
+                return `<div class="conv-item ${active}" onclick="switchConv('${c.id}')">
+      <div class="conv-icon">💬</div>
+      <div class="conv-info">
+        <div class="conv-name">${escapeHtml(c.name)}</div>
+        <div class="conv-meta">${meta}${c.modelId ? ' · ' + escapeHtml(c.modelId) : ''}</div>
+      </div>
+      <button class="conv-del" onclick="event.stopPropagation();deleteConv('${c.id}')">✕</button>
+    </div>`;
+            }).join('');
+        }
+
+        function saveConvs() {
+            const data = { convs: STATE.conversations, counter: convIdCounter, currentId: STATE.currentConvId };
+            localStorage.setItem('llm_chat_convs', JSON.stringify(data));
+        }
+
+        // ====== Messages ======
+        function renderMessages() {
+            messagesContainer.innerHTML = '';
+            emptyChat.style.display = 'none';
+            const msgs = getConvMessages();
+            if (msgs.length === 0) {
+                emptyChat.style.display = 'flex';
+                const conv = getCurrentConv();
+                if (conv && conv.modelId) {
+                    emptyChat.querySelector('h2').textContent = '开始对话';
+                    emptyChat.querySelector('p').textContent = `使用 ${conv.modelId} 开始聊天`;
+                } else {
+                    emptyChat.querySelector('h2').textContent = '选择模型开始';
+                    emptyChat.querySelector('p').textContent = '从上方选择一个模型';
+                }
+                clearChatBtn.style.display = 'none';
+                return;
+            }
+            clearChatBtn.style.display = 'block';
+            msgs.forEach((msg, idx) => {
+                const isLast = idx === msgs.length - 1;
+                const div = document.createElement('div');
+                div.className = `message ${msg.role}`;
+                div.id = isLast && msg.role === 'assistant' ? 'lastMessage' : '';
+                const avatar = msg.role === 'user' ? 'U' : 'A';
+
+                let contentHtml;
+                if (msg.role === 'assistant' && isLast && STATE.isStreaming) {
+                    contentHtml = msg.content ? formatContent(msg.content) + '<span class="streaming-cursor"></span>' : '<span class="streaming-cursor"></span>';
+                } else {
+                    contentHtml = formatContent(msg.content || '');
+                }
+
+                // File indicator
+                let fileHtml = '';
+                if (msg.file) {
+                    fileHtml = `<div class="file-tag"><span class="file-icon">📄</span> ${escapeHtml(msg.file)}</div>`;
+                }
+
+                div.innerHTML = `<div class="message-avatar">${avatar}</div><div class="message-content">${fileHtml}${contentHtml}</div>`;
+                messagesContainer.appendChild(div);
+            });
+            scrollToBottom();
+        }
+
+        function scrollToBottom() {
+            setTimeout(() => { messagesContainer.scrollTop = messagesContainer.scrollHeight; }, 10);
+        }
+
+        function clearConversation() {
+            const conv = getCurrentConv();
+            if (!conv || conv.messages.length === 0) return;
+            if (!confirm('确定清空当前对话？')) return;
+            conv.messages = [];
+            renderMessages();
+            saveConvs();
+        }
+
+        function formatContent(text) {
+            if (!text) return '';
+            if (typeof marked !== 'undefined') {
+                return marked.parse(text, { breaks: true, gfm: true });
+            }
+            return '<p>' + escapeHtml(text).replace(/\n/g, '<br>') + '</p>';
+        }
+
+        // ====== File Upload (PDF) ======
+        async function onFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            if (file.type !== 'application/pdf') { showError('仅支持 PDF 文件'); return; }
+
+            fileBtn.classList.add('has-file');
+            fileName.textContent = file.name;
+            fileInfo.classList.add('show');
+
+            // Extract text via PDF.js
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                let fullText = '';
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const textContent = await page.getTextContent();
+                    fullText += textContent.items.map(item => item.str).join(' ') + '\n';
+                }
+                STATE.pendingFile = { name: file.name, text: fullText.trim() };
+                showError(''); hideError();
+                chatInput.placeholder = `📄 ${file.name} · 输入提问...`;
+            } catch (e) {
+                showError('PDF 解析失败: ' + e.message);
+                clearFile();
+            }
+        }
+
+        function clearFile() {
+            STATE.pendingFile = null;
+            fileBtn.classList.remove('has-file');
+            fileInfo.classList.remove('show');
+            fileName.textContent = '';
+            fileInput.value = '';
+            chatInput.placeholder = '输入消息...';
+            hideError();
+        }
+
+        // ====== Send Message ======
+        async function sendMessage() {
+            const text = chatInput.value.trim();
+            if ((!text && !STATE.pendingFile) || STATE.isStreaming) return;
+
+            const conv = getCurrentConv();
+            if (!conv || !conv.modelId || !STATE.config) return;
+
+            // Build user message with optional file context
+            let userContent = text || (STATE.pendingFile ? '请分析上传的文件' : '');
+            let fileContext = '';
+            if (STATE.pendingFile) {
+                fileContext = STATE.pendingFile.text;
+                // If no user text, just send the file content as request
+                if (!text) {
+                    userContent = `请分析以下文件「${STATE.pendingFile.name}」的内容:\n\n${fileContext}`;
+                } else {
+                    userContent = text;
+                }
+            }
+
+            // Add user message (with file tag)
+            const userMsg = { role: 'user', content: userContent };
+            if (STATE.pendingFile) {
+                userMsg.file = STATE.pendingFile.name;
+            }
+            conv.messages.push(userMsg);
+            chatInput.value = '';
+            clearFile();
+
+            // Add assistant placeholder
+            conv.messages.push({ role: 'assistant', content: '' });
+            STATE.isStreaming = true;
+            renderMessages();
+            enableChat(false);
+            saveConvs();
+
+            // Prepare API messages
+            let apiMessages = [];
+            const sysPrompt = (conv.systemPrompt || 'You are a helpful assistant.').trim();
+
+            // Build system prefix: system prompt + file context
+            let sysPrefix = sysPrompt ? `[System: ${sysPrompt}]\n\n` : '';
+            if (fileContext && text) {
+                sysPrefix += `[File: ${STATE.pendingFile?.name || 'file'}]\n${fileContext}\n\nPlease answer based on the file content above.\n\n`;
+            }
+
+            // Add conversation history (excluding the empty assistant)
+            const history = conv.messages.slice(0, -1);
+            for (let i = 0; i < history.length; i++) {
+                const m = history[i];
+                // Prepend system prefix to the first user message
+                if (i === 0 && m.role === 'user') {
+                    apiMessages.push({ role: 'user', content: sysPrefix + m.content });
+                } else {
+                    apiMessages.push({ role: m.role, content: m.content });
+                }
+            }
+
+            // Limit context length if needed (basic truncation)
+            let totalChars = 0;
+            for (const m of apiMessages) totalChars += (m.content || '').length;
+            if (totalChars > 30000) {
+                // Keep first and last messages, remove older middle messages
+                while (apiMessages.length > 2 && totalChars > 30000) {
+                    const removed = apiMessages.splice(1, 1)[0]; // remove second message (first is user+system)
+                    totalChars -= (removed.content || '').length;
+                }
+            }
+
+            const controller = new AbortController();
+            STATE.abortController = controller;
+
+            console.log('[LLM Chat] API request messages:', apiMessages);
+
+            try {
+                const response = await fetch(`${STATE.config.baseUrl}/chat/completions`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${STATE.config.apiKey}` },
+                    body: JSON.stringify({ model: conv.modelId, messages: apiMessages, stream: true }),
+                    signal: controller.signal,
+                });
+
+                if (!response.ok) {
+                    let msg = `HTTP ${response.status}`;
+                    try { const d = await response.json(); msg = d.error?.message || d.error || msg; } catch (e) { }
+                    throw new Error(msg);
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let fullContent = '';
+                let buffer = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop() || '';
+                    for (const line of lines) {
+                        const trimmed = line.trim();
+                        if (!trimmed || !trimmed.startsWith('data: ')) continue;
+                        const data = trimmed.slice(6);
+                        if (data === '[DONE]') continue;
+                        try {
+                            const parsed = JSON.parse(data);
+                            const delta = parsed.choices?.[0]?.delta?.content;
+                            if (delta) { fullContent += delta; updateStreamContent(fullContent); }
+                        } catch (e) { }
+                    }
+                }
+
+                // Final update
+                conv.messages[conv.messages.length - 1].content = fullContent;
+                STATE.isStreaming = false;
+                renderMessages();
+                saveConvs();
+
+            } catch (err) {
+                if (err.name === 'AbortError') {
+                    const last = conv.messages[conv.messages.length - 1];
+                    if (!last.content) conv.messages.pop();
+                } else {
+                    showError(err.message);
+                    conv.messages.pop();
+                }
+                renderMessages();
+            } finally {
+                STATE.isStreaming = false;
+                STATE.abortController = null;
+                enableChat(true);
+                chatInput.focus();
+            }
+        }
+
+        function updateStreamContent(content) {
+            const el = document.getElementById('lastMessage');
+            if (!el) return;
+            let html = formatContent(content) + '<span class="streaming-cursor"></span>';
+            el.querySelector('.message-content').innerHTML = html;
+            scrollToBottom();
+        }
+
+        function enableChat(enabled) {
+            chatInput.disabled = !enabled;
+            sendBtn.disabled = !enabled;
+        }
+
+        // ====== Utilities ======
+        function setStatus(type, text) {
+            statusDot.className = 'status-dot ' + type;
+            statusText.textContent = text;
+        }
+        function showError(msg) { errorMsg.textContent = msg; errorMsg.classList.add('show'); }
+        function hideError() { errorMsg.classList.remove('show'); errorMsg.textContent = ''; }
+        function escapeHtml(t) { const d = document.createElement('div'); d.textContent = t || ''; return d.innerHTML; }
+
+        // ====== Event Listeners ======
+        chatInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+        });
+        chatInput.addEventListener('input', () => {
+            chatInput.style.height = 'auto';
+            chatInput.style.height = Math.min(chatInput.scrollHeight, 120) + 'px';
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && STATE.isStreaming && STATE.abortController) STATE.abortController.abort();
+        });
+        apiKey.addEventListener('keydown', (e) => { if (e.key === 'Enter') connect(); });
+        fileInput.addEventListener('change', onFileSelect);
+
+        // ====== Start ======
+        init();
+    </script>
+</body>
+
+</html>
