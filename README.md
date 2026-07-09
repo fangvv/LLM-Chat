@@ -12,6 +12,7 @@ A web-based large language model chat interface that supports connecting to Open
 - **多对话管理 | Multi-Conversation Management**：创建、切换、删除对话，每个对话独立保存 | Create, switch, delete conversations, each saved independently
 - **流式输出 | Streaming Output**：实时流式显示 AI 响应 | Real-time streaming display of AI responses
 - **PDF 上传 | PDF Upload**：支持上传 PDF 文件进行内容分析 | Supports uploading PDF files for content analysis
+- **LaTeX 公式 | LaTeX Formulas**：支持行内公式 `$...$` 和块级公式 `$$...$$` | Supports inline formulas `$...$` and block formulas `$$...$$`
 - **主题切换 | Theme Switching**：深色/浅色主题，支持字体大小调整 | Dark/light themes, supports font size adjustment
 - **系统提示词 | System Prompt**：每个对话可自定义系统提示词 | Each conversation can have a custom system prompt
 - **本地存储 | Local Storage**：API 配置、对话历史自动保存到浏览器 | API configuration and conversation history automatically saved to browser
@@ -41,6 +42,7 @@ A web-based large language model chat interface that supports connecting to Open
 
 - HTML5 / CSS3 / JavaScript
 - Marked.js（Markdown 渲染 | Markdown rendering）
+- KaTeX（LaTeX 数学公式渲染 | LaTeX math formula rendering）
 - PDF.js（PDF 文件解析 | PDF file parsing）
 
 ---
