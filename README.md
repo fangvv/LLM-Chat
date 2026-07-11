@@ -20,7 +20,18 @@ A web-based large language model chat interface that supports connecting to Open
 
 ---
 
+## 页面说明 | Pages
+
+| 页面 | 说明 | Description |
+|------|------|-------------|
+| `index.html` | 文本聊天界面 | Text chat interface |
+| `media.html` | 图片与视频生成界面（Agnes AI API） | Image & video generation (Agnes AI API) |
+
+---
+
 ## 使用方法 | Usage
+
+### 文本聊天 (`index.html`)
 
 1. 直接在浏览器中打开 `index.html` | Open `index.html` directly in your browser
 2. 输入 API 接入端地址（如 `https://api.openai.com/v1`） | Enter the API endpoint URL (e.g., `https://api.openai.com/v1`)
@@ -28,13 +39,38 @@ A web-based large language model chat interface that supports connecting to Open
 4. 点击"保存配置 & 连接" | Click "Save Config & Connect"
 5. 选择模型开始对话 | Select a model to start chatting
 
+### 图片与视频生成 (`media.html`)
+
+1. 直接在浏览器中打开 `media.html` | Open `media.html` directly in your browser
+2. 输入 Agnes API 接入端地址（默认为 `https://apihub.agnes-ai.com/v1`） | Enter the Agnes API endpoint (default: `https://apihub.agnes-ai.com/v1`)
+3. 输入 API 密钥 | Enter your API key
+4. 点击"保存配置 & 连接" | Click "Save Config & Connect"
+5. 选择图片或视频模式，填写参数点击生成 | Select image or video mode, fill parameters and generate
+
+#### 图片生成 | Image Generation
+
+- 模型：agnes-image-2.1-flash | Model: agnes-image-2.1-flash
+- 支持尺寸档位：1K / 2K / 3K / 4K | Size tiers: 1K / 2K / 3K / 4K
+- 支持宽高比：1:1、4:3、3:4、16:9、9:16、3:2、2:3、21:9 | Aspect ratios: 1:1, 4:3, 3:4, 16:9, 9:16, 3:2, 2:3, 21:9
+- 支持图生图（传入参考图片 URL） | Supports img2img (reference image URL)
+- 输出格式：URL 或 Base64 | Output format: URL or Base64
+
+#### 视频生成 | Video Generation
+
+- 模型：agnes-video-v2.0 | Model: agnes-video-v2.0
+- 支持文生视频和图生视频 | Supports text-to-video and image-to-video
+- 可配置分辨率、帧数（8n+1）、帧率 | Configurable resolution, frames (8n+1), frame rate
+- 支持随机种子（可复现结果） | Supports seed for reproducible results
+- 支持负面提示词 | Supports negative prompt
+- 异步轮询，实时显示生成进度 | Async polling with real-time progress
+
 ---
 
 ## 快捷键 | Keyboard Shortcuts
 
 - **Enter**：发送消息 | Send message
 - **Shift+Enter**：换行 | New line
-- **Esc**：中断当前生成 | Abort current generation
+- **Esc**：中断当前生成 / 关闭图片预览 | Abort current generation / Close image preview
 
 ---
 

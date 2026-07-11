@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agnes Media - 图片与视频生成</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0f1117;
+            --bg-secondary: #161822;
+            --bg-card: #1c1f2e;
+            --bg-card-hover: #242738;
+            --bg-input: #1a1d2b;
+            --border-color: #2a2d3e;
+            --text-primary: #e8eaed;
+            --text-secondary: #9aa0b0;
+            --text-muted: #5a6070;
+            --accent: #4a6cf7;
+            --accent-hover: #5b7bff;
+            --accent-glow: rgba(74, 108, 247, .25);
+            --success: #34d399;
+            --error: #ef4444;
+            --error-bg: rgba(239, 68, 68, .1);
+            --shadow: 0 4px 24px rgba(0, 0, 0, .3);
+            --radius: 12px;
+            --radius-sm: 8px;
+        }
+
+        [data-theme="light"] {
+            --bg-primary: #f5f6fa;
+            --bg-secondary: #fff;
+            --bg-card: #eef0f6;
+            --bg-card-hover: #e4e7ef;
+            --bg-input: #f0f1f6;
+            --border-color: #d1d5e0;
+            --text-primary: #1a1d2e;
+            --text-secondary: #5a6070;
+            --text-muted: #9098a8;
+            --accent: #4a6cf7;
+            --accent-hover: #3b5de7;
+            --accent-glow: rgba(74, 108, 247, .15);
+            --success: #10b981;
+            --error: #ef4444;
+            --error-bg: rgba(239, 68, 68, .08);
+            --shadow: 0 4px 24px rgba(0, 0, 0, .08);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 3px
+        }
+
+        .app {
+            display: flex;
+            height: 100vh
+        }
+
+        /* Left */
+        .left {
+            width: 370px;
+            min-width: 370px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column
+        }
+
+        .left-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-color)
+        }
+
+        .left-header h1 {
+            font-size: 17px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px
+        }
+
+        .left-header h1 .logo {
+            width: 26px;
+            height: 26px;
+            background: var(--accent);
+            border-radius: 7px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            color: #fff;
+            font-weight: 700
+        }
+
+        .left-header .sub {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+            margin-left: 36px
+        }
+
+        .settings {
+            padding: 12px 20px 14px;
+            border-bottom: 1px solid var(--border-color)
+        }
+
+        .sec-label {
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            margin-bottom: 10px
+        }
+
+        .fg {
+            margin-bottom: 10px
+        }
+
+        .fg label {
+            display: block;
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 4px
+        }
+
+        .fg input,
+        .fg select {
+            width: 100%;
+            padding: 8px 10px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-size: 12px;
+            outline: none;
+            transition: border-color .2s, box-shadow .2s
+        }
+
+        .fg input:focus,
+        .fg select:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow)
+        }
+
+        .btn-save {
+            padding: 8px 16px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            width: 100%;
+            background: var(--accent);
+            color: #fff;
+            font-family: 'Inter', sans-serif
+        }
+
+        .btn-save:hover {
+            background: var(--accent-hover);
+            box-shadow: 0 0 20px var(--accent-glow)
+        }
+
+        .btn-save:disabled {
+            opacity: .4;
+            cursor: not-allowed
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 8px
+        }
+
+        .dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--text-muted);
+            flex-shrink: 0
+        }
+
+        .dot.ok {
+            background: var(--success);
+            box-shadow: 0 0 8px rgba(52, 211, 153, .5)
+        }
+
+        .dot.err {
+            background: var(--error);
+            box-shadow: 0 0 8px rgba(239, 68, 68, .5)
+        }
+
+        .dot.loading {
+            background: var(--accent);
+            animation: pulse 1.5s infinite
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1
+            }
+
+            50% {
+                opacity: .4
+            }
+        }
+
+        .err-msg {
+            background: var(--error-bg);
+            color: var(--error);
+            padding: 6px 10px;
+            border-radius: var(--radius-sm);
+            font-size: 11px;
+            margin-top: 6px;
+            display: none
+        }
+
+        .err-msg.show {
+            display: block
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border-color)
+        }
+
+        .tab {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all .15s;
+            border: none;
+            border-bottom: 2px solid transparent;
+            background: none;
+            font-family: 'Inter', sans-serif
+        }
+
+        .tab:hover {
+            color: var(--text-secondary);
+            background: var(--bg-card)
+        }
+
+        .tab.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent)
+        }
+
+        /* Params */
+        .params {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px 16px
+        }
+
+        .pg {
+            margin-bottom: 14px
+        }
+
+        .pg-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            margin-bottom: 6px
+        }
+
+        .pg-head .hint {
+            font-size: 9px;
+            text-transform: none;
+            letter-spacing: normal
+        }
+
+        .pg textarea {
+            width: 100%;
+            padding: 10px 12px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-size: 12px;
+            outline: none;
+            font-family: 'Inter', sans-serif;
+            resize: vertical;
+            min-height: 70px;
+            line-height: 1.5;
+            transition: border-color .2s
+        }
+
+        .pg textarea:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow)
+        }
+
+        .pg textarea::placeholder {
+            color: var(--text-muted)
+        }
+
+        .pg select,
+        .pg input[type="text"],
+        .pg input[type="number"] {
+            width: 100%;
+            padding: 7px 10px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-size: 12px;
+            outline: none;
+            font-family: 'JetBrains Mono', monospace;
+            transition: border-color .2s
+        }
+
+        .pg select:focus,
+        .pg input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow)
+        }
+
+        .row {
+            display: flex;
+            gap: 8px
+        }
+
+        .row>* {
+            flex: 1;
+            min-width: 0
+        }
+
+        .chk {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 0
+        }
+
+        .chk input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--accent);
+            cursor: pointer
+        }
+
+        .chk label {
+            font-size: 12px;
+            cursor: pointer;
+            color: var(--text-secondary)
+        }
+
+        .gen-btn {
+            padding: 10px;
+            border: none;
+            border-radius: var(--radius-sm);
+            background: var(--accent);
+            color: #fff;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            margin-top: 4px;
+            font-family: 'Inter', sans-serif
+        }
+
+        .gen-btn:hover {
+            background: var(--accent-hover);
+            box-shadow: 0 0 20px var(--accent-glow)
+        }
+
+        .gen-btn:disabled {
+            opacity: .4;
+            cursor: not-allowed;
+            box-shadow: none
+        }
+
+        /* Right */
+        .right {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0
+        }
+
+        .right-header {
+            padding: 14px 24px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--bg-secondary)
+        }
+
+        .right-title {
+            font-size: 15px;
+            font-weight: 600
+        }
+
+        .right-actions {
+            display: flex;
+            gap: 6px
+        }
+
+        .icon-btn {
+            background: none;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 5px 10px;
+            font-size: 11px;
+            transition: all .15s;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+            font-family: 'Inter', sans-serif
+        }
+
+        .icon-btn:hover {
+            background: var(--bg-card-hover);
+            color: var(--text-primary)
+        }
+
+        .results {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            overflow: hidden;
+            animation: fadeIn .3s ease
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
+        .card-head {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 12px
+        }
+
+        .card-model {
+            font-size: 11px;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent);
+            white-space: nowrap
+        }
+
+        .card-prompt {
+            flex: 1;
+            font-size: 11px;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis
+        }
+
+        .card-time {
+            font-size: 10px;
+            color: var(--text-muted);
+            white-space: nowrap
+        }
+
+        .card-body {
+            padding: 16px;
+            display: flex;
+            justify-content: center;
+            background: var(--bg-primary)
+        }
+
+        .card-body img,
+        .card-body video {
+            max-width: 100%;
+            max-height: 500px;
+            border-radius: var(--radius-sm);
+            box-shadow: 0 2px 12px rgba(0, 0, 0, .3)
+        }
+
+        .card-body img {
+            object-fit: contain;
+            cursor: pointer;
+            transition: transform .15s
+        }
+
+        .card-body img:hover {
+            transform: scale(1.01)
+        }
+
+        .card-foot {
+            padding: 10px 16px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between
+        }
+
+        .card-foot .info {
+            font-size: 10px;
+            color: var(--text-muted)
+        }
+
+        .card-foot .actions {
+            display: flex;
+            gap: 6px
+        }
+
+        .card-foot .actions a,
+        .card-foot .actions button {
+            background: none;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 4px 10px;
+            font-size: 10px;
+            text-decoration: none;
+            transition: all .15s;
+            font-family: 'Inter', sans-serif
+        }
+
+        .card-foot .actions a:hover,
+        .card-foot .actions button:hover {
+            background: var(--bg-card-hover);
+            color: var(--text-primary)
+        }
+
+        /* Progress */
+        .prog-wrap {
+            background: var(--bg-input);
+            border-radius: 6px;
+            height: 6px;
+            overflow: hidden;
+            margin: 8px 0
+        }
+
+        .prog-bar {
+            height: 100%;
+            background: var(--accent);
+            border-radius: 6px;
+            transition: width .5s ease;
+            width: 0%
+        }
+
+        .prog-text {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-align: center;
+            margin-top: 6px
+        }
+
+        /* Empty */
+        .empty {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            gap: 12px;
+            padding: 40px
+        }
+
+        .empty .icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px
+        }
+
+        .empty h2 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-secondary)
+        }
+
+        .empty p {
+            font-size: 12px;
+            text-align: center;
+            line-height: 1.6;
+            max-width: 320px
+        }
+
+        /* Lightbox */
+        .lightbox {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .85);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            cursor: pointer
+        }
+
+        .lightbox.show {
+            display: flex
+        }
+
+        .lightbox img {
+            max-width: 95%;
+            max-height: 95%;
+            border-radius: 8px;
+            object-fit: contain
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            padding: 8px 20px;
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            color: var(--text-primary);
+            box-shadow: var(--shadow);
+            z-index: 999;
+            opacity: 0;
+            transition: opacity .3s;
+            pointer-events: none
+        }
+
+        .toast.show {
+            opacity: 1
+        }
+
+        @media(max-width:900px) {
+            .left {
+                width: 100%;
+                min-width: 0;
+                max-height: 45vh;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color)
+            }
+
+            .app {
+                flex-direction: column
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="lightbox" id="lightbox"><img id="lbImg" src=""></div>
+    <div class="toast" id="toast"></div>
+
+    <div class="app">
+        <div class="left">
+            <div class="left-header">
+                <h1><span class="logo">A</span> Agnes Media</h1>
+                <div class="sub">图片与视频生成</div>
+            </div>
+
+            <div class="settings">
+                <div class="sec-label">API 配置</div>
+                <div class="fg">
+                    <label>接入端地址</label>
+                    <input id="cfgUrl" type="url" value="https://apihub.agnes-ai.com/v1" autocomplete="off">
+                </div>
+                <div class="fg">
+                    <label>API 密钥</label>
+                    <input id="cfgKey" type="password" placeholder="sk-..." autocomplete="off">
+                </div>
+                <button class="btn-save" id="btnConnect">保存配置 & 连接</button>
+                <div class="status"><span class="dot" id="dot"></span><span id="stxt">未连接</span></div>
+                <div class="err-msg" id="emsg"></div>
+            </div>
+
+            <div class="tabs">
+                <button class="tab active" id="tabImage">图片生成</button>
+                <button class="tab" id="tabVideo">视频生成</button>
+            </div>
+
+            <div class="params">
+                <!-- IMAGE -->
+                <div id="imgP">
+                    <div class="pg">
+                        <div class="pg-head">模型</div>
+                        <select id="imgModel">
+                            <option value="agnes-image-2.1-flash">agnes-image-2.1-flash</option>
+                        </select>
+                    </div>
+                    <div class="pg">
+                        <div class="pg-head">提示词</div>
+                        <textarea id="imgPrompt" placeholder="描述你想要生成的图片..." rows="3"></textarea>
+                    </div>
+                    <div class="pg">
+                        <div class="pg-head">尺寸档位 <span class="hint">Quality</span></div>
+                        <select id="imgSize">
+                            <option value="1K">1K (1024)</option>
+                            <option value="2K" selected>2K (2048)</option>
+                            <option value="3K">3K (3072)</option>
+                            <option value="4K">4K (4096)</option>
+                        </select>
+                    </div>
+                    <div class="pg">
+                        <div class="pg-head">宽高比</div>
+                        <select id="imgRatio">
+                            <option value="1:1">1:1 方形</option>
+                            <option value="4:3">4:3 横屏</option>
+                            <option value="3:4">3:4 竖屏</option>
+                            <option value="16:9">16:9 宽屏</option>
+                            <option value="9:16">9:16 竖屏</option>
+                            <option value="3:2">3:2 照片</option>
+                            <option value="2:3">2:3 竖版照片</option>
+                            <option value="21:9">21:9 超宽</option>
+                        </select>
+                    </div>
+                    <div class="pg">
+                        <div class="pg-head">输出格式</div>
+                        <select id="imgFmt">
+                            <option value="url">URL</option>
+                            <option value="b64_json">Base64</option>
+                        </select>
+                    </div>
+                    <div class="pg">
+                        <div class="pg-head">图生图</div>
+                        <div class="chk"><input type="checkbox" id="imgI2i"><label for="imgI2i">启用图生图模式</label></div>
+                        <input type="text" id="imgRefUrl" placeholder="参考图片 URL 或 data:image/png;base64,..."
+                            style="display:none;margin-top:6px">
+                    </div>
+                    <button class="gen-btn" id="imgBtn" disabled>生成图片</button>
+                </div>
+
+                <!-- VIDEO -->
+                <div id="vidP" style="display:none">
+                    <div class="pg">
+                        <div class="pg-head">模型</div>
+                        <select id="vidModel">
+                            <option value="agnes-video-v2.0">agnes-video-v2.0</option>
+                        </select>
+                    </div>
+                    <div class="pg">
+                        <div class="pg-head">提示词</div>
+                        <textarea id="vidPrompt" placeholder="描述你想要生成的视频..." rows="3"></textarea>
+                    </div>
+                    <div class="pg">
+                        <div class="pg-head">负面提示词 <span class="hint">可选</span></div>
+                        <textarea id="vidNeg" placeholder="blurry, distorted, low quality..." rows="2"></textarea>
+                    </div>
+                    <div class="pg">
+                        <div class="pg-head">分辨率</div>
+                        <select id="vidRes">
+                            <option value="1152x768" selected>1152x768 (720p 16:9)</option>
+                            <option value="768x1152">768x1152 (720p 9:16)</option>
+                            <option value="1024x1024">1024x1024 (1:1)</option>
+                            <option value="1280x720">1280x720 (HD 16:9)</option>
+                            <option value="720x1280">720x1280 (HD 9:16)</option>
+                            <option value="1920x1080">1920x1080 (FHD 16:9)</option>
+                            <option value="1080x1920">1080x1920 (FHD 9:16)</option>
+                        </select>
+                    </div>
+                    <div class="pg">
+                        <div class="pg-head">时长配置</div>
+                        <div class="row">
+                            <div><label
+                                    style="font-size:10px;color:var(--text-muted);display:block;margin-bottom:3px">帧数
+                                    (8n+1)</label><input type="number" id="vidFrames" value="121" min="9" max="441">
+                            </div>
+                            <div><label
+                                    style="font-size:10px;color:var(--text-muted);display:block;margin-bottom:3px">帧率
+                                    FPS</label><input type="number" id="vidFps" value="24" min="1" max="60"></div>
+                        </div>
+                        <div class="prog-text" id="durHint">预计时长: ~5.0s</div>
+                    </div>
+                    <div class="pg">
+                        <div class="pg-head">图生视频</div>
+                        <div class="chk"><input type="checkbox" id="vidI2v"><label for="vidI2v">启用图生视频模式</label></div>
+                        <input type="text" id="vidRefUrl" placeholder="参考图片 URL" style="display:none;margin-top:6px">
+                    </div>
+                    <div class="pg">
+                        <div class="pg-head">随机种子 <span class="hint">可选</span></div>
+                        <input type="number" id="vidSeed" placeholder="留空则随机">
+                    </div>
+                    <button class="gen-btn" id="vidBtn" disabled>生成视频</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="right">
+            <div class="right-header">
+                <span class="right-title" id="rTitle">图片生成</span>
+                <div class="right-actions">
+                    <button class="icon-btn" id="btnClear">清空历史</button>
+                    <button class="icon-btn" id="btnTheme">深色</button>
+                </div>
+            </div>
+            <div class="results" id="results">
+                <div class="empty" id="emptyEl">
+                    <div class="icon">A</div>
+                    <h2>准备就绪</h2>
+                    <p>配置 API 并填写参数，点击生成按钮开始创作</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            var S = { cfg: null, connected: false, mode: 'image', generating: false, history: [] };
+            var $ = function (id) { return document.getElementById(id) };
+
+            // DOM
+            var el = {
+                cfgUrl: $('cfgUrl'), cfgKey: $('cfgKey'), btnConnect: $('btnConnect'),
+                dot: $('dot'), stxt: $('stxt'), emsg: $('emsg'),
+                imgP: $('imgP'), vidP: $('vidP'),
+                imgBtn: $('imgBtn'), vidBtn: $('vidBtn'),
+                results: $('results'), emptyEl: $('emptyEl'), rTitle: $('rTitle'),
+                toast: $('toast'), lightbox: $('lightbox'), lbImg: $('lbImg')
+            };
+
+            // Init
+            function init() {
+                loadTheme();
+                try { var c = localStorage.getItem('agnes_media_cfg'); if (c) { S.cfg = JSON.parse(c); el.cfgUrl.value = S.cfg.url || ''; el.cfgKey.value = S.cfg.key || '' } } catch (e) { }
+                try { var h = localStorage.getItem('agnes_media_hist'); if (h) S.history = JSON.parse(h) } catch (e) { }
+                renderResults(); updateDurHint();
+            }
+
+            // Theme
+            function toggleTheme() {
+                var light = document.documentElement.getAttribute('data-theme') !== 'light';
+                document.documentElement.setAttribute('data-theme', light ? 'light' : 'dark');
+                localStorage.setItem('agnes_media_theme', light ? 'light' : 'dark');
+                $('btnTheme').textContent = light ? '浅色' : '深色';
+            }
+            function loadTheme() {
+                if (localStorage.getItem('agnes_media_theme') === 'light') {
+                    document.documentElement.setAttribute('data-theme', 'light');
+                    $('btnTheme').textContent = '浅色';
+                }
+            }
+
+            // Connect
+            function doConnect() {
+                var url = el.cfgUrl.value.trim().replace(/\/+$/, '');
+                var key = el.cfgKey.value.trim();
+                if (!url || !key) { showErr('请输入接入端地址和 API 密钥'); return }
+                S.cfg = { url: url, key: key };
+                localStorage.setItem('agnes_media_cfg', JSON.stringify(S.cfg));
+                setDot('loading', '验证中...'); hideErr(); el.btnConnect.disabled = true;
+                fetch(url + '/models', { headers: { Authorization: 'Bearer ' + key } })
+                    .then(function (r) {
+                        if (!r.ok) { var m = 'HTTP ' + r.status; return r.json().then(function (d) { throw new Error(d.error?.message || m) }).catch(function (e) { throw e || new Error(m) }) }
+                        return r.json();
+                    })
+                    .then(function (d) {
+                        S.connected = true;
+                        setDot('ok', '已连接 · ' + (d.data && d.data.length || 0) + ' 个模型');
+                        el.imgBtn.disabled = false; el.vidBtn.disabled = false;
+                        el.btnConnect.textContent = '已连接';
+                        setTimeout(function () { el.btnConnect.textContent = '保存配置 & 连接' }, 2000);
+                    })
+                    .catch(function (e) {
+                        showErr(e.message); setDot('err', '连接失败'); S.connected = false;
+                    })
+                    .finally(function () { el.btnConnect.disabled = false });
+            }
+            function setDot(cls, txt) { el.dot.className = 'dot ' + cls; el.stxt.textContent = txt }
+            function showErr(m) { el.emsg.textContent = m; el.emsg.classList.add('show') }
+            function hideErr() { el.emsg.classList.remove('show') }
+
+            // Mode
+            function switchMode(m) {
+                S.mode = m;
+                $('tabImage').classList.toggle('active', m === 'image');
+                $('tabVideo').classList.toggle('active', m === 'video');
+                el.imgP.style.display = m === 'image' ? '' : 'none';
+                el.vidP.style.display = m === 'video' ? '' : 'none';
+                el.rTitle.textContent = m === 'image' ? '图片生成' : '视频生成';
+                renderResults();
+            }
+
+            // Toggle
+            $('imgI2i').addEventListener('change', function () { $('imgRefUrl').style.display = this.checked ? '' : 'none' });
+            $('vidI2v').addEventListener('change', function () { $('vidRefUrl').style.display = this.checked ? '' : 'none' });
+
+            // Duration
+            function updateDurHint() {
+                var f = parseInt($('vidFrames').value) || 121;
+                var r = parseInt($('vidFps').value) || 24;
+                $('durHint').textContent = '预计时长: ~' + (f / r).toFixed(1) + 's';
+            }
+            $('vidFrames').addEventListener('input', updateDurHint);
+            $('vidFps').addEventListener('input', updateDurHint);
+
+            // Image
+            function genImage() {
+                if (S.generating) return;
+                var prompt = $('imgPrompt').value.trim();
+                if (!prompt) { toast('请输入提示词'); return }
+                if (!S.cfg) { toast('请先配置 API'); return }
+                S.generating = true; el.imgBtn.disabled = true; el.imgBtn.textContent = '生成中...';
+
+                var model = $('imgModel').value, size = $('imgSize').value, ratio = $('imgRatio').value, fmt = $('imgFmt').value;
+                var i2i = $('imgI2i').checked, refUrl = $('imgRefUrl').value.trim();
+
+                var body = { model: model, prompt: prompt, size: size, ratio: ratio };
+                if (fmt === 'b64_json') body.return_base64 = true;
+                if (i2i && refUrl) { body.extra_body = { image: [refUrl], response_format: fmt } }
+
+                console.log('[Image Req]', body);
+
+                fetch(S.cfg.url + '/images/generations', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + S.cfg.key },
+                    body: JSON.stringify(body)
+                })
+                    .then(function (r) {
+                        if (!r.ok) return r.json().then(function (d) { throw new Error(d.error?.message || d.error || ('HTTP ' + r.status)) }).catch(function (e) { throw e || new Error('HTTP ' + r.status) });
+                        return r.json();
+                    })
+                    .then(function (data) {
+                        console.log('[Image Resp]', data);
+                        var count = 0;
+                        if (data.data && data.data.length) {
+                            data.data.forEach(function (item) {
+                                var url = item.url;
+                                if (!url && item.b64_json) url = 'data:image/png;base64,' + item.b64_json;
+                                if (url) { S.history.unshift({ mode: 'image', model: model, prompt: prompt, url: url, time: ts(), size: size + ' ' + ratio }); count++ }
+                            });
+                            saveHist(); renderResults(); toast('已生成 ' + count + ' 张图片');
+                        } else { toast('未返回图片数据') }
+                    })
+                    .catch(function (e) { toast('错误: ' + e.message) })
+                    .finally(function () { S.generating = false; el.imgBtn.disabled = false; el.imgBtn.textContent = '生成图片' });
+            }
+
+            // Video
+            function genVideo() {
+                if (S.generating) return;
+                var prompt = $('vidPrompt').value.trim();
+                if (!prompt) { toast('请输入提示词'); return }
+                if (!S.cfg) { toast('请先配置 API'); return }
+                S.generating = true; el.vidBtn.disabled = true; el.vidBtn.textContent = '提交中...';
+
+                var model = $('vidModel').value;
+                var res = $('vidRes').value.split('x');
+                var width = parseInt(res[0]), height = parseInt(res[1]);
+                var numFrames = parseInt($('vidFrames').value) || 121;
+                var frameRate = parseInt($('vidFps').value) || 24;
+                var neg = $('vidNeg').value.trim();
+                var i2v = $('vidI2v').checked, refUrl = $('vidRefUrl').value.trim();
+                var seedVal = $('vidSeed').value.trim();
+
+                var cardId = 'vc_' + Date.now();
+                addVideoCard(cardId, prompt, model);
+
+                var body = { model: model, prompt: prompt, width: width, height: height, num_frames: numFrames, frame_rate: frameRate };
+                if (neg) body.negative_prompt = neg;
+                if (i2v && refUrl) body.image = refUrl;
+                if (seedVal) body.seed = parseInt(seedVal);
+
+                console.log('[Video Req]', body);
+
+                fetch(S.cfg.url + '/videos', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + S.cfg.key },
+                    body: JSON.stringify(body)
+                })
+                    .then(function (r) {
+                        if (!r.ok) return r.json().then(function (d) { throw new Error(d.error?.message || d.error || ('HTTP ' + r.status)) }).catch(function (e) { throw e || new Error('HTTP ' + r.status) });
+                        return r.json();
+                    })
+                    .then(function (data) {
+                        console.log('[Video Resp]', data);
+                        var videoId = data.video_id, taskId = data.task_id || data.id;
+                        if (!videoId && !taskId) throw new Error('未获取到任务 ID');
+                        el.vidBtn.textContent = '轮询中...';
+                        pollVideo(videoId, taskId, cardId, { prompt: prompt, model: model, width: width, height: height, numFrames: numFrames, frameRate: frameRate, neg: neg });
+                    })
+                    .catch(function (e) {
+                        toast('错误: ' + e.message); failVideoCard(cardId, e.message);
+                        S.generating = false; el.vidBtn.disabled = false; el.vidBtn.textContent = '生成视频';
+                    });
+            }
+
+            function pollVideo(videoId, taskId, cardId, params) {
+                var tries = 0, max = 180, btn = el.vidBtn;
+                function poll() {
+                    var url = videoId ? 'https://apihub.agnes-ai.com/agnesapi?video_id=' + videoId : S.cfg.url + '/videos/' + taskId;
+                    fetch(url, { headers: { Authorization: 'Bearer ' + S.cfg.key } })
+                        .then(function (r) {
+                            if (!r.ok) throw new Error('HTTP ' + r.status);
+                            return r.json();
+                        })
+                        .then(function (data) {
+                            console.log('[Poll]', data.status);
+                            updateVideoCard(cardId, data.status, data.progress);
+                            if (data.status === 'completed' || data.status === 'succeeded') {
+                                if (data.url) {
+                                    finishVideoCard(cardId, data.url);
+                                    S.history.unshift({ mode: 'video', model: params.model, prompt: params.prompt, url: data.url, time: ts(), params: params });
+                                    saveHist(); toast('视频生成完成');
+                                } else { toast('已完成但无 URL'); failVideoCard(cardId, '无 URL') }
+                                S.generating = false; btn.disabled = false; btn.textContent = '生成视频'; return;
+                            }
+                            if (data.status === 'failed' || data.status === 'error') throw new Error(data.error?.message || '生成失败');
+                            tries++; if (tries >= max) throw new Error('轮询超时');
+                            btn.textContent = '生成中 ' + tries * 5 + 's...';
+                            setTimeout(poll, 5000);
+                        })
+                        .catch(function (e) {
+                            toast('错误: ' + e.message); failVideoCard(cardId, e.message);
+                            S.generating = false; btn.disabled = false; btn.textContent = '生成视频';
+                        });
+                }
+                setTimeout(poll, 3000);
+            }
+
+            // Video card helpers
+            function addVideoCard(id, prompt, model) {
+                el.emptyEl.style.display = 'none';
+                var card = document.createElement('div'); card.className = 'card'; card.id = id;
+                var head = mkHead(model, prompt, '排队中');
+                var body = document.createElement('div'); body.className = 'card-body';
+                body.style.flexDirection = 'column'; body.style.alignItems = 'center'; body.style.padding = '32px'; body.style.gap = '8px';
+                var icon = document.createElement('div'); icon.textContent = '⏳'; icon.style.fontSize = '28px';
+                var status = document.createElement('div'); status.className = 'prog-text'; status.id = id + '_st'; status.textContent = '排队中';
+                var wrap = document.createElement('div'); wrap.className = 'prog-wrap'; wrap.style.width = '200px';
+                var bar = document.createElement('div'); bar.className = 'prog-bar'; bar.id = id + '_bar';
+                wrap.appendChild(bar);
+                body.appendChild(icon); body.appendChild(status); body.appendChild(wrap);
+                card.appendChild(head); card.appendChild(body);
+                el.results.insertBefore(card, el.results.firstChild);
+            }
+            function updateVideoCard(id, status, progress) {
+                var st = document.getElementById(id + '_st'), bar = document.getElementById(id + '_bar');
+                if (!st || !bar) return;
+                var pct = 0, label = status || '处理中';
+                if (status === 'queued' || status === 'pending') { pct = 10; label = '排队中' }
+                else if (status === 'in_progress' || status === 'processing' || status === 'running') { pct = Math.min(progress || 50, 90); label = '生成中 ' + (progress || 0) + '%' }
+                else if (status === 'completed' || status === 'succeeded') { pct = 100; label = '已完成' }
+                else if (status === 'failed' || status === 'error') { pct = 0; label = '失败' }
+                st.textContent = label; bar.style.width = pct + '%';
+            }
+            function finishVideoCard(id, url) {
+                var card = document.getElementById(id); if (!card) return;
+                var body = card.querySelector('.card-body');
+                body.innerHTML = ''; body.style.flexDirection = ''; body.style.alignItems = ''; body.style.padding = '16px'; body.style.gap = '';
+                var v = document.createElement('video');
+                v.src = url; v.controls = true; v.playsInline = true; v.autoplay = true; v.muted = true; v.loop = true;
+                v.style.maxWidth = '100%'; v.style.maxHeight = '500px'; v.style.borderRadius = '8px';
+                body.appendChild(v);
+                var foot = document.createElement('div'); foot.className = 'card-foot';
+                var info = document.createElement('span'); info.className = 'info';
+                var p = S.history.find(function (h) { return h.url === url });
+                info.textContent = p && p.params ? p.params.width + 'x' + p.params.height : '';
+                var acts = document.createElement('div'); acts.className = 'actions';
+                var dl = document.createElement('a'); dl.href = url; dl.target = '_blank'; dl.download = ''; dl.textContent = '下载';
+                acts.appendChild(dl); foot.appendChild(info); foot.appendChild(acts); card.appendChild(foot);
+            }
+            function failVideoCard(id, msg) {
+                var st = document.getElementById(id + '_st');
+                if (st) st.textContent = '失败: ' + msg;
+                var bar = document.getElementById(id + '_bar');
+                if (bar) bar.style.background = 'var(--error)';
+            }
+
+            // Render
+            function renderResults() {
+                while (el.results.firstChild) el.results.removeChild(el.results.firstChild);
+                var items = S.history.filter(function (h) { return h.mode === S.mode });
+                if (!items.length) { el.results.appendChild(el.emptyEl); el.emptyEl.style.display = 'flex'; return }
+                el.emptyEl.style.display = 'none';
+                for (var i = 0; i < items.length; i++) {
+                    (function (idx) {
+                        var item = items[idx];
+                        var card = document.createElement('div'); card.className = 'card';
+                        var head = mkHead(item.model, item.prompt, item.time);
+                        var body = document.createElement('div'); body.className = 'card-body';
+                        if (item.mode === 'image') {
+                            var img = document.createElement('img');
+                            img.src = item.url; img.alt = '生成的图片'; img.loading = 'lazy';
+                            img.addEventListener('click', function () { openLB(item.url) });
+                            img.onerror = function () { this.onerror = null; this.style.padding = '40px'; this.style.color = '#ef4444'; this.style.fontSize = '13px'; this.alt = '图片加载失败' };
+                            body.appendChild(img);
+                        } else {
+                            var vid = document.createElement('video');
+                            vid.src = item.url; vid.controls = true; vid.playsInline = true;
+                            body.appendChild(vid);
+                        }
+                        var foot = document.createElement('div'); foot.className = 'card-foot';
+                        var info = document.createElement('span'); info.className = 'info';
+                        info.textContent = item.size || (item.params ? item.params.width + 'x' + item.params.height : '');
+                        var acts = document.createElement('div'); acts.className = 'actions';
+                        var dl = document.createElement('a'); dl.href = item.url; dl.target = '_blank'; dl.download = ''; dl.textContent = '下载';
+                        var del = document.createElement('button'); del.textContent = '删除';
+                        del.addEventListener('click', function () { deleteItem(idx) });
+                        acts.appendChild(dl); acts.appendChild(del); foot.appendChild(info); foot.appendChild(acts);
+                        card.appendChild(head); card.appendChild(body); card.appendChild(foot);
+                        el.results.appendChild(card);
+                    })(i);
+                }
+            }
+            function mkHead(model, prompt, time) {
+                var h = document.createElement('div'); h.className = 'card-head';
+                var m = document.createElement('span'); m.className = 'card-model'; m.textContent = model || '';
+                var p = document.createElement('span'); p.className = 'card-prompt'; p.textContent = prompt || '';
+                var t = document.createElement('span'); t.className = 'card-time'; t.textContent = time || '';
+                h.appendChild(m); h.appendChild(p); h.appendChild(t); return h;
+            }
+
+            // History
+            function saveHist() { localStorage.setItem('agnes_media_hist', JSON.stringify(S.history)) }
+            function deleteItem(idx) {
+                var count = 0;
+                for (var i = 0; i < S.history.length; i++) {
+                    if (S.history[i].mode === S.mode) { if (count === idx) { S.history.splice(i, 1); break } count++ }
+                }
+                saveHist(); renderResults();
+            }
+            function clearHistory() {
+                if (!confirm('确定清空当前模式的所有历史？')) return;
+                S.history = S.history.filter(function (h) { return h.mode !== S.mode });
+                saveHist(); renderResults();
+            }
+
+            // Utils
+            function ts() { return new Date().toLocaleString() }
+            var toastTimer = null;
+            function toast(msg) { el.toast.textContent = msg; el.toast.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(function () { el.toast.classList.remove('show') }, 3000) }
+            function openLB(url) { el.lbImg.src = url; el.lightbox.classList.add('show') }
+            el.lightbox.addEventListener('click', function () { el.lightbox.classList.remove('show'); el.lbImg.src = '' });
+            document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { el.lightbox.classList.remove('show'); el.lbImg.src = '' } });
+            el.cfgKey.addEventListener('keydown', function (e) { if (e.key === 'Enter') doConnect() });
+
+            // Bind events (all functions are inside IIFE, bind via addEventListener)
+            el.btnConnect.addEventListener('click', doConnect);
+            $('tabImage').addEventListener('click', function () { switchMode('image') });
+            $('tabVideo').addEventListener('click', function () { switchMode('video') });
+            el.imgBtn.addEventListener('click', genImage);
+            el.vidBtn.addEventListener('click', genVideo);
+            $('btnClear').addEventListener('click', clearHistory);
+            $('btnTheme').addEventListener('click', toggleTheme);
+
+            init();
+        })();
+    </script>
+</body>
+
+</html>
