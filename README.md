@@ -1,5 +1,7 @@
 # LLM Chat
 
+[![GitHub](https://img.shields.io/badge/Project_Homepage-181717?logo=github)](https://github.com/fangvv/llm-chat) — [https://github.com/fangvv/llm-chat](https://github.com/fangvv/llm-chat)
+
 一个基于 Web 的大语言模型聊天界面，支持连接 OpenAI API 兼容的服务端。
 
 A web-based large language model chat interface that supports connecting to OpenAI API compatible endpoints.
