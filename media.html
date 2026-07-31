@@ -732,10 +732,6 @@
             <div class="settings">
                 <div class="sec-label">API 配置</div>
                 <div class="fg">
-                    <label>接入端地址</label>
-                    <input id="cfgUrl" type="url" value="https://apihub.agnes-ai.com/v1" autocomplete="off">
-                </div>
-                <div class="fg">
                     <label>API 密钥</label>
                     <input id="cfgKey" type="password" placeholder="sk-..." autocomplete="off">
                 </div>
@@ -754,9 +750,7 @@
                 <div id="imgP">
                     <div class="pg">
                         <div class="pg-head">模型</div>
-                        <select id="imgModel">
-                            <option value="agnes-image-2.1-flash">agnes-image-2.1-flash</option>
-                        </select>
+                        <select id="imgModel"></select>
                     </div>
                     <div class="pg">
                         <div class="pg-head">提示词</div>
@@ -804,9 +798,7 @@
                 <div id="vidP" style="display:none">
                     <div class="pg">
                         <div class="pg-head">模型</div>
-                        <select id="vidModel">
-                            <option value="agnes-video-v2.0">agnes-video-v2.0</option>
-                        </select>
+                        <select id="vidModel"></select>
                     </div>
                     <div class="pg">
                         <div class="pg-head">提示词</div>
@@ -879,11 +871,13 @@
             var $ = function (id) { return document.getElementById(id) };
 
             // DOM
+            var API_BASE = 'https://api.agnes-ai.cn/v1';
+
             var el = {
-                cfgUrl: $('cfgUrl'), cfgKey: $('cfgKey'), btnConnect: $('btnConnect'),
+                cfgKey: $('cfgKey'), btnConnect: $('btnConnect'),
                 dot: $('dot'), stxt: $('stxt'), emsg: $('emsg'),
                 imgP: $('imgP'), vidP: $('vidP'),
-                imgBtn: $('imgBtn'), vidBtn: $('vidBtn'),
+                imgBtn: $('imgBtn'), vidBtn: $('vidBtn'), imgModel: $('imgModel'), vidModel: $('vidModel'),
                 results: $('results'), emptyEl: $('emptyEl'), rTitle: $('rTitle'),
                 toast: $('toast'), lightbox: $('lightbox'), lbImg: $('lbImg')
             };
@@ -891,7 +885,7 @@
             // Init
             function init() {
                 loadTheme();
-                try { var c = localStorage.getItem('agnes_media_cfg'); if (c) { S.cfg = JSON.parse(c); el.cfgUrl.value = S.cfg.url || ''; el.cfgKey.value = S.cfg.key || '' } } catch (e) { }
+                try { var c = localStorage.getItem('agnes_media_cfg'); if (c) { var p = JSON.parse(c); if (p.key) { S.cfg = { url: API_BASE, key: p.key }; el.cfgKey.value = p.key } } } catch (e) { }
                 try { var h = localStorage.getItem('agnes_media_hist'); if (h) S.history = JSON.parse(h) } catch (e) { }
                 renderResults(); updateDurHint();
             }
@@ -912,20 +906,21 @@
 
             // Connect
             function doConnect() {
-                var url = el.cfgUrl.value.trim().replace(/\/+$/, '');
                 var key = el.cfgKey.value.trim();
-                if (!url || !key) { showErr('请输入接入端地址和 API 密钥'); return }
-                S.cfg = { url: url, key: key };
-                localStorage.setItem('agnes_media_cfg', JSON.stringify(S.cfg));
+                if (!key) { showErr('请输入 API 密钥'); return }
+                S.cfg = { url: API_BASE, key: key };
+                localStorage.setItem('agnes_media_cfg', JSON.stringify({ key: key }));
                 setDot('loading', '验证中...'); hideErr(); el.btnConnect.disabled = true;
-                fetch(url + '/models', { headers: { Authorization: 'Bearer ' + key } })
+                fetch(API_BASE + '/models', { headers: { Authorization: 'Bearer ' + key } })
                     .then(function (r) {
                         if (!r.ok) { var m = 'HTTP ' + r.status; return r.json().then(function (d) { throw new Error(d.error?.message || m) }).catch(function (e) { throw e || new Error(m) }) }
                         return r.json();
                     })
                     .then(function (d) {
                         S.connected = true;
-                        setDot('ok', '已连接 · ' + (d.data && d.data.length || 0) + ' 个模型');
+                        var models = d.data || [];
+                        setDot('ok', '已连接 · ' + models.length + ' 个模型');
+                        populateModels(models);
                         el.imgBtn.disabled = false; el.vidBtn.disabled = false;
                         el.btnConnect.textContent = '已连接';
                         setTimeout(function () { el.btnConnect.textContent = '保存配置 & 连接' }, 2000);
@@ -938,6 +933,30 @@
             function setDot(cls, txt) { el.dot.className = 'dot ' + cls; el.stxt.textContent = txt }
             function showErr(m) { el.emsg.textContent = m; el.emsg.classList.add('show') }
             function hideErr() { el.emsg.classList.remove('show') }
+
+            // Populate models
+            function populateModels(models) {
+                var imgModels = [], vidModels = [];
+                models.forEach(function (m) {
+                    var id = m.id || '';
+                    if (/image/i.test(id)) imgModels.push(id);
+                    else if (/video/i.test(id)) vidModels.push(id);
+                });
+                if (!imgModels.length) imgModels = ['agnes-image-2.1-flash'];
+                if (!vidModels.length) vidModels = ['agnes-video-v2.0'];
+                fillSelect(el.imgModel, imgModels);
+                fillSelect(el.vidModel, vidModels);
+            }
+            function fillSelect(sel, list) {
+                var prev = sel.value;
+                sel.innerHTML = '';
+                list.forEach(function (v) {
+                    var opt = document.createElement('option');
+                    opt.value = v; opt.textContent = v;
+                    sel.appendChild(opt);
+                });
+                if (prev && list.indexOf(prev) >= 0) sel.value = prev;
+            }
 
             // Mode
             function switchMode(m) {
@@ -1057,7 +1076,7 @@
             function pollVideo(videoId, taskId, cardId, params) {
                 var tries = 0, max = 180, btn = el.vidBtn;
                 function poll() {
-                    var url = videoId ? 'https://apihub.agnes-ai.com/agnesapi?video_id=' + videoId : S.cfg.url + '/videos/' + taskId;
+                    var url = S.cfg.url + '/videos/' + (taskId || videoId);
                     fetch(url, { headers: { Authorization: 'Bearer ' + S.cfg.key } })
                         .then(function (r) {
                             if (!r.ok) throw new Error('HTTP ' + r.status);
@@ -1067,9 +1086,10 @@
                             console.log('[Poll]', data.status);
                             updateVideoCard(cardId, data.status, data.progress);
                             if (data.status === 'completed' || data.status === 'succeeded') {
-                                if (data.url) {
-                                    finishVideoCard(cardId, data.url);
-                                    S.history.unshift({ mode: 'video', model: params.model, prompt: params.prompt, url: data.url, time: ts(), params: params });
+                                var videoUrl = data.metadata && data.metadata.url ? data.metadata.url : data.url;
+                                if (videoUrl) {
+                                    finishVideoCard(cardId, videoUrl);
+                                    S.history.unshift({ mode: 'video', model: params.model, prompt: params.prompt, url: videoUrl, time: ts(), params: params });
                                     saveHist(); toast('视频生成完成');
                                 } else { toast('已完成但无 URL'); failVideoCard(cardId, '无 URL') }
                                 S.generating = false; btn.disabled = false; btn.textContent = '生成视频'; return;
