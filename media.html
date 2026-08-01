@@ -1076,14 +1076,14 @@
             function pollVideo(videoId, taskId, cardId, params) {
                 var tries = 0, max = 180, btn = el.vidBtn;
                 function poll() {
-                    var url = S.cfg.url + '/videos/' + (taskId || videoId);
+                    var url = videoId ? API_BASE + '/agnesapi?video_id=' + videoId + '&_=' + Date.now() : S.cfg.url + '/videos/' + taskId;
                     fetch(url, { headers: { Authorization: 'Bearer ' + S.cfg.key } })
                         .then(function (r) {
                             if (!r.ok) throw new Error('HTTP ' + r.status);
                             return r.json();
                         })
                         .then(function (data) {
-                            console.log('[Poll]', data.status);
+                            console.log('[Poll]', data);
                             updateVideoCard(cardId, data.status, data.progress);
                             if (data.status === 'completed' || data.status === 'succeeded') {
                                 var videoUrl = data.metadata && data.metadata.url ? data.metadata.url : data.url;
