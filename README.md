@@ -17,6 +17,7 @@ A web-based large language model chat interface that supports connecting to Open
 - **LaTeX 公式 | LaTeX Formulas**：支持行内公式 `$...$` 和块级公式 `$$...$$` | Supports inline formulas `$...$` and block formulas `$$...$$`
 - **主题切换 | Theme Switching**：深色/浅色主题，支持字体大小调整 | Dark/light themes, supports font size adjustment
 - **系统提示词 | System Prompt**：每个对话可自定义系统提示词 | Each conversation can have a custom system prompt
+- **语音播放 | Text-to-Speech**：AI 答复可一键朗读，支持多音色选择（MiMo 高质量音色，未配置时回退浏览器内置语音） | Read AI replies aloud with selectable voices (MiMo high-quality voices, falls back to browser built-in speech)
 - **本地存储 | Local Storage**：API 配置、对话历史自动保存到浏览器 | API configuration and conversation history automatically saved to browser
 - **响应式设计 | Responsive Design**：适配桌面和移动端 | Adapts to desktop and mobile devices
 
@@ -40,6 +41,15 @@ A web-based large language model chat interface that supports connecting to Open
 3. 输入 API 密钥 | Enter your API key
 4. 点击"保存配置 & 连接" | Click "Save Config & Connect"
 5. 选择模型开始对话 | Select a model to start chatting
+
+#### 语音播放 | Text-to-Speech
+
+- 每条 AI 答复下方有「🔊 播放」按钮，点击即可朗读该条答复 | Each AI reply has a "🔊 Play" button to read it aloud
+- 播放中可点击「⏹ 停止」随时停止 | Click "Stop" to interrupt playback at any time
+- **音色选择 | Voice Selection**：下拉框可选择音色 | Choose a voice from the dropdown
+  - 配置了 MiMo 语音合成 API Key 时，使用 MiMo 高质量音色（冰糖、茉莉、苏打、白桦等 8 种） | With a MiMo TTS API Key, uses MiMo high-quality voices (8 presets)
+  - 未配置时自动回退到浏览器内置语音 | Falls back to browser built-in voices when not configured
+- **MiMo 配置 | MiMo Setup**：在设置面板的「语音合成 API Key（MiMo，可选）」填入 [MiMo](https://mimo.mi.com) API Key 即可启用 | Enter your MiMo API Key in the "TTS API Key (MiMo, optional)" field to enable
 
 ### 图片与视频生成 (`media.html`)
 
