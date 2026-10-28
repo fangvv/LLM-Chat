@@ -29,6 +29,7 @@ A web-based large language model chat interface that supports connecting to Open
 |------|------|-------------|
 | `index.html` | 文本聊天界面 | Text chat interface |
 | `media.html` | 图片与视频生成界面（Agnes AI API） | Image & video generation (Agnes AI API) |
+| `sensenova.html` | 图像生成与编辑界面（SenseNova U1.5，调用地址固定） | Image generation & editing (SenseNova U1.5, fixed endpoint) |
 
 ---
 
@@ -75,6 +76,19 @@ A web-based large language model chat interface that supports connecting to Open
 - 支持随机种子（可复现结果） | Supports seed for reproducible results
 - 支持负面提示词 | Supports negative prompt
 - 异步轮询，实时显示生成进度 | Async polling with real-time progress
+
+### SenseNova 图像生成 (`sensenova.html`)
+
+1. 在浏览器中打开 `sensenova.html`（调用地址已固定为 `https://token.sensenova.cn/v1`） | Open `sensenova.html` (endpoint is fixed to `https://token.sensenova.cn/v1`)
+2. 输入 SenseNova API 密钥（`sk-` 开头），点击"保存配置 & 连接"校验 `GET /models` | Enter your SenseNova API key (`sk-...`) and click "Save Config & Connect" to validate via `GET /models`
+3. 选择文生图或图片编辑，填写参数后生成 | Choose text-to-image or image editing, then generate
+
+- 模型：`sensenova-u1.5-lite`（默认）/ `sensenova-u1.5-fast` | Models: `sensenova-u1.5-lite` (default) / `sensenova-u1.5-fast`
+- 文生图：`POST /images/generations`；图片编辑：`POST /images/edits`（最多 5 张参考图，首图为主图） | Text-to-image: `POST /images/generations`; editing: `POST /images/edits` (up to 5 references, first is primary)
+- 推荐分辨率：2K（2048×2048、2720×1536、1536×2720、1664×2496、2496×1664）与 4K（4096×4096），也支持自定义 W×H（32 的倍数，512–4096，长宽比 ≤ 3:1） | Sizes: 2K presets and 4K, plus custom W×H (multiples of 32, 512–4096, ratio ≤ 3:1)
+- 参数：`output_format`（png/jpeg/webp）、`response_format`（url 24 小时有效 / b64_json）、`watermark`、`prompt_extend` | Params: `output_format`, `response_format` (24h URL / b64_json), `watermark`, `prompt_extend`
+
+> 注意：`token.sensenova.cn` 未响应浏览器的 CORS 预检（OPTIONS），因此直接用浏览器打开页面时请求会被跨域拦截。若遇到该情况，需通过本地反向代理访问，或使用关闭 CORS 校验的浏览器/扩展。 | Note: `token.sensenova.cn` does not answer CORS preflight (OPTIONS), so requests from a browser page are blocked. Use a local reverse proxy, or a browser/extension that disables CORS checks.
 
 ---
 
